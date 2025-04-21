@@ -10,7 +10,7 @@ import com.mongodb.client.MongoClients;
 public class MongoClientCustom {
     private static MongoClient mongoClient;
 
-    private static synchronized MongoClient getMongoClient()
+    public static synchronized MongoClient getMongoClient()
     {
         if (mongoClient == null)
         {
@@ -25,7 +25,7 @@ public class MongoClientCustom {
                                     .build()
                     )
                     .build();
-            MongoClient mongoClient = MongoClients.create(settings);
+            mongoClient = MongoClients.create(settings);
         }
         return mongoClient;
     }

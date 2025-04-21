@@ -14,15 +14,8 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        System.out.println( "Connecting to mongodb" );
-        ConnectionString connectionString = new ConnectionString("mongodb+srv://arash:arash@firstcluster.fjeectn.mongodb.net/?retryWrites=true&w=majority&appName=FirstCluster");
-        MongoClientSettings settings = MongoClientSettings.builder()
-                .applyConnectionString(connectionString)
-                .serverApi(ServerApi.builder()
-                        .version(ServerApiVersion.V1)
-                        .build())
-                .build();
-        MongoClient mongoClient = MongoClients.create(settings);
+        System.out.println( "Connecting to mongodb via singleton" );
+        MongoClient mongoClient = MongoClientCustom.getMongoClient();
         List<Document> databases = mongoClient.listDatabases().into(new ArrayList<>());
         databases.forEach(db -> System.out.println(db.toJson()));
     }
