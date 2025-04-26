@@ -18,5 +18,7 @@ public class Main {
         MongoClient mongoClient = MongoClientCustom.getMongoClient();
         List<Document> databases = mongoClient.listDatabases().into(new ArrayList<>());
         databases.forEach(db -> System.out.println(db.toJson()));
+        databases.get(0);
+        mongoClient.close();
     }
 }
