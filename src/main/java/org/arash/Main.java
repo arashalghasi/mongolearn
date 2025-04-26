@@ -12,6 +12,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
@@ -27,7 +28,14 @@ public class Main {
                 .append("business_id", "10021-2015-ENFO")
                 .append("result", "no violation");
 
-        collection.insertOne(inspection);
+        Document inspectionTwo = new Document("_id" , new ObjectId())
+                .append("business_id", "10021-2015-ENFO")
+                .append("result", "no violation");
+
+        List<Document> docs = Arrays.asList(inspection,inspectionTwo);
+
+        //collection.insertOne(inspection);
+        collection.insertMany(docs);
         mongoClient.close();
     }
 }
