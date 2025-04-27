@@ -479,3 +479,50 @@ db.trips.countDocuments({})
 db.trips.countDocuments({ tripduration: { $gt: 120 }, usertype: "Subscriber" })
 
 
+Inserting a Document in Java Applications
+Review the following code, which demonstrates how to insert a single document and multiple documents into a collection.
+
+
+Insert a Document
+To insert a single document into a collection:
+
+Use the getCollection() method to access the MongoCollection object, which is used to represent the specified collection.
+Append the insertOne() method to the collection object.
+Within the parentheses of insertOne(), include an object that contains the document data.
+Print out the inserted document's id.
+Here's an example:
+
+MongoDatabase database = mongoClient.getDatabase("sample_training");
+MongoCollection<Document> collection = database.getCollection("inspections");
+Document inspection = new Document("_id", new ObjectId())
+.append("id", "10021-2015-ENFO")
+.append("certificate_number", 9278806)
+.append("business_name", "ATLIXCO DELI GROCERY INC.")
+.append("date", Date.from(LocalDate.of(2015, 2, 20).atStartOfDay(ZoneId.systemDefault()).toInstant()))
+.append("result", "No Violation Issued")
+.append("sector", "Cigarette Retail Dealer - 127")
+.append("address", new Document().append("city", "RIDGEWOOD").append("zip", 11385).append("street", "MENAHAN ST").append("number", 1712));
+InsertOneResult result = collection.insertOne(inspection);
+BsonValue id = result.getInsertedId();
+System.out.println(id);
+
+Insert Multiple Documents
+To insert multiple documents into a collection:
+
+Append the insertMany() method to the collection object.
+Within the parentheses of insertMany(), include an object that contains the document data.
+Print out the ids of the inserted documents.
+Here's an example:
+
+MongoDatabase database = mongoClient.getDatabase("bank");
+MongoCollection<Document> collection = database.getCollection("accounts");
+Document doc1 = new Document().append("account_holder","john doe").append("account_id","MDB99115881").append("balance",1785).append("account_type","checking");
+Document doc2 = new Document().append("account_holder","jane doe").append("account_id","MDB79101843").append("balance",1468).append("account_type","checking");
+List<Document> accounts = Arrays.asList(doc1, doc2);
+InsertManyResult result = collection.insertMany(accounts);
+result.getInsertedIds().forEach((x,y)-> System.out.println(y.asObjectId()));
+
+
+
+
+

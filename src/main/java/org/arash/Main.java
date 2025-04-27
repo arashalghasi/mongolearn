@@ -4,10 +4,8 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerApi;
 import com.mongodb.ServerApiVersion;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -35,7 +33,20 @@ public class Main {
         List<Document> docs = Arrays.asList(inspection,inspectionTwo);
 
         //collection.insertOne(inspection);
-        collection.insertMany(docs);
+        // collection.insertMany(docs);
+        collection.find(Filters.and(Filters.gte("this", 10),Filters.lte("this", 20))).forEach(e -> System.out.println(e.toJson()));
+        // if we want to process each record we can use .iterator()
+        try(MongoCursor<Document> cursor = collection.find(Filters.and(Filters.gte("this", 10),
+                Filters.lte("this", 20))).iterator())
+        {
+            while (cursor.hasNext())
+            {
+                System.out.println(cursor.next().toJson());
+            }
+        }
+
+        // if we want to find a single record like find by Id we can use the .first()
+        collection.find(Filters.and(Filters.gte("this", 10),Filters.lte("this", 20))).first();
         mongoClient.close();
     }
 }
