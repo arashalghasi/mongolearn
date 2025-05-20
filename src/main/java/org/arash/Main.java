@@ -1,6 +1,7 @@
 package org.arash;
 
 import com.mongodb.client.*;
+import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
@@ -9,6 +10,10 @@ import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.slf4j.*;
 
+import javax.print.Doc;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class Main {
@@ -23,7 +28,7 @@ public class Main {
         MongoCollection<Document> accountsCollection = MongoClientCustom.createCollection(databaseBankAccount,"accounts");
 
         Document acc1 = new Document("_id" , new ObjectId())
-                .append("accountHolder", "arash alghasi")
+                .append("accountHolder", "arash ghasemi")
                 .append("accountType", "saving")
                 .append("balance", 3999)
                 .append("accountStatus", "active");
@@ -40,7 +45,7 @@ public class Main {
 
         accountsCollection.insertOne(acc1);
         ObjectId id = new ObjectId();
-        id = Objects.requireNonNull(accountsCollection.find().first()).getObjectId(0);
+        id = Objects.requireNonNull(accountsCollection.find(Filters.eq("accountHolder", "arash ghasemi")).first()).getObjectId(0);
         System.out.println(Objects.requireNonNull(accountsCollection.find(Filters.eq("account_id", id)).first()).toJson());
         //collection.insertOne(inspection);
         // collection.insertMany(docs);
@@ -62,8 +67,31 @@ public class Main {
         System.out.println(Objects.requireNonNull(accountsCollection.find(Filters.eq("account_id", id)).first()).toJson());
 
 
+        // to delete a document in a collection
+        accountsCollection.deleteMany(query);
+        accountsCollection.deleteOne(query);
+
+        // deleteMany without any query will delete all the documents
+
+
+        TransactionBody  tnxBody  = new TransactionBody<String>() {
+            @Override
+            public String execute() {
+
+                MongoCollection<Document> bankingCollection = mongoClient.getDatabase("bank").getCollection("accounts");
+
+                return "fund transfer";
+            }
+
+        };
+
         // if we want to find a single record like find by Id we can use the .first()
         // collection.find(Filters.and(Filters.gte("this", 10),Filters.lte("this", 20))).first();
         mongoClient.close();
+    }
+
+    private static void matchStage(MongoCollection<Document> accounts) {
+        Bson matchStage = Aggregates.match(Filters.eq("account_id","4762847"));
+        accounts.aggregate(List.of(matchStage)).forEach(document -> System.out.println(document.toJson()));
     }
 }
