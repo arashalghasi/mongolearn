@@ -1,6 +1,64 @@
+---
+
+## 🟢 MongoDB Developer Guide
+
+### 🔗 Risorse Ufficiali
+
+* **MongoDB Developer Center**:
+  [https://www.mongodb.com/developer/](https://www.mongodb.com/developer/)
+
+* **MongoDB Documentation**:
+  [https://www.mongodb.com/docs/](https://www.mongodb.com/docs/)
+
+---
+
 # MongoDB: The Complete Developer's Guide
 
 Welcome to your comprehensive guide to MongoDB! This document is designed to take you from the fundamental concepts of NoSQL and document databases to practical applications, including data modeling, indexing, querying, and leveraging MongoDB's powerful aggregation framework. We'll explore these concepts with a focus on clarity and provide illustrative examples, particularly for developers working with Java.
+## Configuration and installation
+
+## 🧰 Installazione di MongoDB
+
+### 1. Installare MongoDB Server (Community Edition)
+
+Scarica la **versione community** dal seguente link:
+👉 [https://www.mongodb.com/try/download/community](https://www.mongodb.com/try/download/community)
+
+> ✅ *Versione consigliata:* **8.0.9**
+
+Durante l’installazione **assicurati di selezionare l’opzione per installare anche MongoDB Compass**, lo strumento grafico per la gestione dei database.
+
+---
+
+### 2. Installare Mongo Shell (mongosh)
+
+Scarica **mongosh (MongoDB Shell)** da:
+👉 [https://www.mongodb.com/try/download/shell](https://www.mongodb.com/try/download/shell)
+
+> ✅ *Versione consigliata:* **2.5.1**
+
+---
+
+### 3. Verifica del Servizio MongoDB e Configurazione PATH
+
+Dopo l'installazione:
+
+* Premi `Win + R`, digita `services.msc` e verifica che il servizio **MongoDB Server** sia in esecuzione.
+* Aggiungi il percorso della cartella `bin` di MongoDB alle **variabili d’ambiente** di sistema (PATH), ad esempio:
+
+  ```
+  C:\Program Files\MongoDB\Server\8.0\bin
+  ```
+
+---
+
+### 4. Aggiunta del percorso di mongosh alle variabili d’ambiente
+
+Fai lo stesso anche per la shell (`mongosh`). Ad esempio:
+
+```
+C:\Program Files\MongoDB\mongosh\bin
+```
 
 ## Table of Contents
 
@@ -67,6 +125,7 @@ Welcome to your comprehensive guide to MongoDB! This document is designed to tak
 ## Chapter 0: Getting Started: Your First `db.help()`
 
 When you first dive into the MongoDB Shell (`mongosh`), one of the most useful commands to know is `db.help()`. It's your instant reference guide.
+You can connect to the mongoDB community database by inserting the command mongosh in you command line after the verification that the mongoDB server is running as a service on your local computer.
 
 ```javascript
 // In the MongoDB Shell (`mongosh`)
