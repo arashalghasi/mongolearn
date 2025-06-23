@@ -1,6 +1,6 @@
 ## 🟢 MongoDB Developer Guide
 
-### 🔗 Risorse Ufficiali
+### 🔗 Official Resources
 
 *   **MongoDB Developer Center**:
     [https://www.mongodb.com/developer/](https://www.mongodb.com/developer/)
@@ -14,34 +14,34 @@
 
 Welcome to your comprehensive guide to MongoDB! This document is designed to take you from the fundamental concepts of NoSQL and document databases to practical applications, including data modeling, indexing, querying, and leveraging MongoDB's powerful aggregation framework. We'll explore these concepts with a focus on clarity and provide illustrative examples, particularly for developers working with Java.
 
-## 🧰 Configurazione e Installazione
+## 🧰 Setup and Installation
 
-### 1. Installare MongoDB Server (Community Edition)
+### 1. Install MongoDB Server (Community Edition)
 
-Scarica la **versione community** dal seguente link:
+Download the **Community Edition** from the following link:
 👉 [https://www.mongodb.com/try/download/community](https://www.mongodb.com/try/download/community)
 
-> ✅ *Versione consigliata:* **8.0.x**
+> ✅ *Recommended Version:* **8.0.x**
 
-Durante l’installazione **assicurati di selezionare l’opzione per installare anche MongoDB Compass**, lo strumento grafico per la gestione dei database.
+During the installation, **make sure to select the option to install MongoDB Compass**, the official GUI for managing your databases.
 
 ---
 
-### 2. Installare Mongo Shell (mongosh)
+### 2. Install the MongoDB Shell (mongosh)
 
-Scarica **mongosh (MongoDB Shell)** da:
+Download **mongosh (MongoDB Shell)** from:
 👉 [https://www.mongodb.com/try/download/shell](https://www.mongodb.com/try/download/shell)
 
-> ✅ *Versione consigliata:* **2.x.x**
+> ✅ *Recommended Version:* **2.x.x**
 
 ---
 
-### 3. Verifica del Servizio e Configurazione PATH
+### 3. Verify the Service and Configure the PATH
 
-Dopo l'installazione:
+After installation:
 
-*   Premi `Win + R`, digita `services.msc` e verifica che il servizio **MongoDB Server** sia in esecuzione.
-*   Aggiungi il percorso della cartella `bin` di MongoDB alle **variabili d’ambiente** di sistema (PATH), ad esempio:
+*   Press `Win + R`, type `services.msc`, and verify that the **MongoDB Server** service is running.
+*   Add the path to the MongoDB `bin` folder to your system's **environment variables** (PATH). For example:
 
     ```
     C:\Program Files\MongoDB\Server\8.0\bin
@@ -49,9 +49,9 @@ Dopo l'installazione:
 
 ---
 
-### 4. Aggiunta del percorso di mongosh alle variabili d’ambiente
+### 4. Add the mongosh Path to Environment Variables
 
-Fai lo stesso anche per la shell (`mongosh`). Ad esempio:
+Do the same for the shell (`mongosh`). For example:
 
 ```
 C:\Program Files\MongoDB\mongosh\bin
@@ -59,53 +59,13 @@ C:\Program Files\MongoDB\mongosh\bin
 
 ---
 
-## 🔐 Abilitare l'Autenticazione (Security)
+## 🔐 Enable Authentication (Security)
 
-Per un ambiente di produzione, è fondamentale abilitare l'autenticazione.
+For any production or sensitive environment, enabling authentication is critical.
 
-If you are using a self-installed MongoDB deployment, run the commands below to create the necessary roles and users to help with implementing programmatic access control:
+### 1. Create an Administrator User
 
-```javascript
-var dbName = "book-role-programmatic-restricted-view";
-db = db.getSiblingDB(dbName);
-db.dropDatabase();
-db.dropAllRoles();
-db.dropAllUsers();
-
-// Create 3 roles to use for programmatic access control
-db.createRole({"role": "Receptionist", "roles": [], "privileges": []});
-db.createRole({"role": "Nurse", "roles": [], "privileges": []});
-db.createRole({"role": "Doctor", "roles": [], "privileges": []});
-
-// Create 3 users where each user will have a different role
-db.createUser({
-  "user": "front-desk",
-  "pwd": "abc123",
-  "roles": [
-    {"role": "Receptionist", "db": dbName},
-  ]
-});
-db.createUser({
-  "user": "nurse-station",
-  "pwd": "xyz789",
-  "roles": [
-    {"role": "Nurse", "db": dbName},
-  ]
-});
-db.createUser({
-  "user": "exam-room",
-  "pwd": "mno456",
-  "roles": [
-    {"role": "Doctor", "db": dbName},
-  ]
-});
-
-
-```
-
-### 1. Creare un Utente Amministratore
-
-Connettiti alla tua istanza MongoDB (prima di abilitare la sicurezza) e crea un utente root. Questo utente avrà i permessi per gestire l'intera istanza.
+Connect to your MongoDB instance (before enabling security) and create a root user. This user will have the necessary permissions to manage the entire instance.
 
 ```javascript
 // Switch to the admin database
@@ -119,12 +79,12 @@ db.createUser({
 })
 ```
 
-### 2. Creare un Utente Applicativo (Best Practice)
+### 2. Create an Application User (Best Practice)
 
-Per motivi di sicurezza, è una buona pratica **non usare** l'utente `root` per le operazioni dell'applicazione. Creiamo invece un utente dedicato con i soli permessi necessari (`readWrite`) per il database specifico dell'applicazione.
+For security reasons, it is a best practice **not to use** the `root` user for your application's daily operations. Instead, create a dedicated user with only the necessary permissions (`readWrite`) for your application's specific database.
 
 ```javascript
-// Switch to your application's database
+// Switch to your application's database (it will be created if it doesn't exist)
 use myAppDB
 
 // Create a user with read/write permissions only for this database
@@ -135,44 +95,85 @@ db.createUser({
 })
 ```
 
-### 3. Abilitare l'Autorizzazione nel File di Configurazione
+### 3. Enable Authorization in the Configuration File
 
-Apri il file `mongod.cfg` (solitamente in `C:\Program Files\MongoDB\Server\8.0\bin`) con un editor di testo come amministratore e aggiungi o decommenta la sezione `security`.
+Open your `mongod.cfg` file (usually located at `C:\Program Files\MongoDB\Server\8.0\bin`) with a text editor as an administrator. Add or uncomment the `security` section to enable authorization.
 
 ```yaml
-# ... other configurations ...
+#... other configurations ...
 
 security:
+  authorization: enabled
 
 # network interfaces
 net:
   port: 27017
-  bindIp: 127.0.0.1 # Aggiungi altri IP se necessario, es: 127.0.0.1,192.168.1.100
+  bindIp: 127.0.0.1 # Add other IPs if needed, e.g., 127.0.0.1,192.168.1.100
 ```
 
-Dopo aver salvato, **riavvia il servizio MongoDB** da `services.msc`.
+After saving the file, **restart the MongoDB service** from `services.msc`.
+
+### 4. Example: Creating Custom Roles
+
+For more fine-grained control, you can define custom roles. The script below creates three roles (`Receptionist`, `Nurse`, `Doctor`) and assigns them to different users, demonstrating a role-based access control (RBAC) pattern.
+
+```javascript
+// This script is an example of advanced role creation.
+// Run it after connecting as an administrator.
+
+var dbName = "medical-records";
+db = db.getSiblingDB(dbName);
+
+// Create 3 custom roles with no initial privileges
+db.createRole({"role": "Receptionist", "roles": [], "privileges": []});
+db.createRole({"role": "Nurse", "roles": [], "privileges": []});
+db.createRole({"role": "Doctor", "roles": [], "privileges": []});
+
+// Create 3 users, each with a different custom role
+db.createUser({
+  "user": "front-desk",
+  "pwd": "password123",
+  "roles": [
+    {"role": "Receptionist", "db": dbName},
+  ]
+});
+db.createUser({
+  "user": "nurse-station",
+  "pwd": "password456",
+  "roles": [
+    {"role": "Nurse", "db": dbName},
+  ]
+});
+db.createUser({
+  "user": "exam-room",
+  "pwd": "password789",
+  "roles": [
+    {"role": "Doctor", "db": dbName},
+  ]
+});
+```
 
 ---
 
-## 🔌 Connessione e Interrogazione
+## 🔌 Connection and Querying
 
-### 1. Connettersi al Database tramite mongosh
+### 1. Connect to the Database via mongosh
 
-Una volta che l'autenticazione è abilitata, dovrai fornire le credenziali per connetterti. Per le operazioni amministrative, usa `adminUser`. Per i test applicativi, usa `appUser`.
+Once authentication is enabled, you must provide credentials to connect. For administrative tasks, use `adminUser`. For application testing, use `appUser`.
 
 ```sh
-# Esempio di connessione con l'utente applicativo
+# Example of connecting with the application user
 mongosh --host localhost --port 27017 --username appUser --password <your-app-password> --authenticationDatabase myAppDB
 ```
 
-## ☕ Esempi di Integrazione con Java (Spring Data MongoDB)
+## ☕ Integration Examples with Java (Spring Data MongoDB)
 
-### 1. Configurazione della Connessione (`MongoConfig.java`)
+### 1. Connection Configuration (`MongoConfig.java`)
 
-Questa configurazione si connette utilizzando l'utente applicativo `appUser`.
+This configuration class sets up a `MongoClient` bean to connect to MongoDB using the `appUser` credentials stored in your application's properties.
 
 ```java
-package it.icg.axapro.mongo.config;
+package com.example.mongo.config;
 
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
@@ -190,7 +191,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 
 @Configuration
-@EnableMongoRepositories(basePackages = "it.icg.axapro.mongo.repository")
+@EnableMongoRepositories(basePackages = "com.example.mongo.repository")
 public class MongoConfig {
 
 	@Value("${mongo.host}")
@@ -210,9 +211,10 @@ public class MongoConfig {
 
 	@Bean
 	public MongoClient mongoClient() {
-        // The connection string should use the application database for auth and as the target DB.
+        // The connection string uses the application user credentials and specifies the
+        // database to authenticate against via `authSource`.
 		String connection = String.format(
-            "mongodb://%s:%s@%s:%d/%s?authSource=%s&retryWrites=true&w=majority&directConnection=true",
+            "mongodb://%s:%s@%s:%d/%s?authSource=%s&retryWrites=true&w=majority",
             username, password, host, port, database, database
         );
 		ConnectionString connectionString = new ConnectionString(connection);
@@ -220,23 +222,24 @@ public class MongoConfig {
 		MongoClientSettings settings = MongoClientSettings.builder()
 	        	.applyConnectionString(connectionString)
 				.applyToConnectionPoolSettings(builder -> builder
-						.maxSize(50) 
-						.minSize(10) 
-						.maxWaitTime(5000, TimeUnit.MILLISECONDS) 
-						.maxConnectionIdleTime(60, TimeUnit.SECONDS) 
+						.maxSize(50)
+						.minSize(10)
+						.maxWaitTime(5000, TimeUnit.MILLISECONDS)
+						.maxConnectionIdleTime(60, TimeUnit.SECONDS)
 						.maxConnectionLifeTime(120, TimeUnit.SECONDS)
 						)
 				.writeConcern(WriteConcern.MAJORITY.withWTimeout(5, TimeUnit.SECONDS))
 				.retryWrites(true)
 				.applyToSocketSettings(builder -> builder
-						.connectTimeout(5000, TimeUnit.MILLISECONDS) 
-						.readTimeout(5000, TimeUnit.MILLISECONDS)    
+						.connectTimeout(5000, TimeUnit.MILLISECONDS)
+						.readTimeout(5000, TimeUnit.MILLISECONDS)
 						)
 				.serverApi(
 						ServerApi.builder()
 						.version(ServerApiVersion.V1)
 						.build()
 						)
+				// Disable SSL for local development. Enable for production.
 				.applyToSslSettings(builder -> builder.enabled(false))
 				.build();
 
@@ -245,58 +248,66 @@ public class MongoConfig {
 
 	@Bean
 	MongoOperations mongoTemplate(MongoClient mongoClient) {
-		// The MongoTemplate will operate on the specified application database
+		// This MongoTemplate will operate on the database specified in the configuration.
 		return new MongoTemplate(mongoClient, database);
 	}
 }
 ```
 
-### 2. Modello del Documento (`TrattativeXmlMongo.java`)
+### 2. Document Model (`NegotiationXmlMongo.java`)
+
+This class represents a document in the `negotiationXmlTestAggregation` collection. The `@Document` annotation maps the class to the collection name.
 
 ```java
-package it.icg.axapro.mongo.model;
+// Using more conventional English naming for clarity
+package com.example.mongo.model;
 
 import javax.persistence.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import it.icg.axapro.data.TrattativeStoricoId;
-import it.icg.axapro.usertype.TrattativaXML;
+import com.example.data.NegotiationHistoryId;
+import com.example.usertype.NegotiationXML;
 
+// The collection name is kept from the original for consistency.
 @Document(collection = "trattativaXmltestAggregation")
-public class TrattativeXmlMongo {
+public class NegotiationXmlMongo {
 
 	@Id
-	private TrattativeStoricoId id;
+	private NegotiationHistoryId id;
 	
-	private TrattativaXML trattativaXml;
+	// This field likely holds an XML payload representing a negotiation.
+	private NegotiationXML negotiationXml;
 	
 	// Constructors, Getters, and Setters...
 }
 ```
 
-### 3. Repository per l'Accesso ai Dati (`TrattativeXmlMongoRepository.java`)
+### 3. Data Access Repository (`NegotiationXmlMongoRepository.java`)
+
+This Spring Data repository interface provides standard CRUD (Create, Read, Update, Delete) operations for `NegotiationXmlMongo` documents.
 
 ```java
-package it.icg.axapro.mongo.repository;
+// Using more conventional English naming for clarity
+package com.example.mongo.repository;
 
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import it.icg.axapro.data.TrattativeStoricoId;
-import it.icg.axapro.mongo.model.TrattativeXmlMongo;
+import com.example.data.NegotiationHistoryId;
+import com.example.mongo.model.NegotiationXmlMongo;
 
-public interface TrattativeXmlMongoRepository extends MongoRepository<TrattativeXmlMongo, TrattativeStoricoId> {
+public interface NegotiationXmlMongoRepository extends MongoRepository<NegotiationXmlMongo, NegotiationHistoryId> {
 	
 	@Override
-	Optional<TrattativeXmlMongo> findById(TrattativeStoricoId trattativeStoricoId);
+	Optional<NegotiationXmlMongo> findById(NegotiationHistoryId negotiationHistoryId);
 
 	@Override
-	boolean existsById(TrattativeStoricoId trattativeStoricoId);
+	boolean existsById(NegotiationHistoryId negotiationHistoryId);
 
-	List<TrattativeXmlMongo> findAllById(Iterable<TrattativeStoricoId> trattativeStoricoIds);
+	List<NegotiationXmlMongo> findAllById(Iterable<NegotiationHistoryId> negotiationHistoryIds);
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	TrattativeXmlMongo save(TrattativeXmlMongo trattativeXmlMongo);
+	NegotiationXmlMongo save(NegotiationXmlMongo negotiationXmlMongo);
 }
 ```
 
@@ -2432,7 +2443,7 @@ Pipeline stages have a limit of 100 megabytes of RAM. To allow for the handling 
 If you have multiple stages in your pipeline, it’s always better to understand the overhead associated with each stage. For instance, if you have both $sort and $match stage in your pipeline, it’s highly recommended that you use a $match before $sort in order to minimize the documents that need to be sorted.
 
 
-to join two collections
+#### to join two collections
 
 ```javascript
 
@@ -2445,6 +2456,8 @@ to join two collections
    } },
 
 ```
+
+
 
 <b>$merge<b> </br>
 
