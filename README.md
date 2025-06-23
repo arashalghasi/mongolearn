@@ -1,30 +1,27 @@
----
-
 ## 🟢 MongoDB Developer Guide
 
 ### 🔗 Risorse Ufficiali
 
-* **MongoDB Developer Center**:
-  [https://www.mongodb.com/developer/](https://www.mongodb.com/developer/)
+*   **MongoDB Developer Center**:
+    [https://www.mongodb.com/developer/](https://www.mongodb.com/developer/)
 
-* **MongoDB Documentation**:
-  [https://www.mongodb.com/docs/](https://www.mongodb.com/docs/)
+*   **MongoDB Documentation**:
+    [https://www.mongodb.com/docs/](https://www.mongodb.com/docs/)
 
 ---
 
 # MongoDB: The Complete Developer's Guide
 
 Welcome to your comprehensive guide to MongoDB! This document is designed to take you from the fundamental concepts of NoSQL and document databases to practical applications, including data modeling, indexing, querying, and leveraging MongoDB's powerful aggregation framework. We'll explore these concepts with a focus on clarity and provide illustrative examples, particularly for developers working with Java.
-## Configuration and installation
 
-## 🧰 Installazione di MongoDB
+## 🧰 Configurazione e Installazione
 
 ### 1. Installare MongoDB Server (Community Edition)
 
 Scarica la **versione community** dal seguente link:
 👉 [https://www.mongodb.com/try/download/community](https://www.mongodb.com/try/download/community)
 
-> ✅ *Versione consigliata:* **8.0.9**
+> ✅ *Versione consigliata:* **8.0.x**
 
 Durante l’installazione **assicurati di selezionare l’opzione per installare anche MongoDB Compass**, lo strumento grafico per la gestione dei database.
 
@@ -35,20 +32,20 @@ Durante l’installazione **assicurati di selezionare l’opzione per installare
 Scarica **mongosh (MongoDB Shell)** da:
 👉 [https://www.mongodb.com/try/download/shell](https://www.mongodb.com/try/download/shell)
 
-> ✅ *Versione consigliata:* **2.5.1**
+> ✅ *Versione consigliata:* **2.x.x**
 
 ---
 
-### 3. Verifica del Servizio MongoDB e Configurazione PATH
+### 3. Verifica del Servizio e Configurazione PATH
 
 Dopo l'installazione:
 
-* Premi `Win + R`, digita `services.msc` e verifica che il servizio **MongoDB Server** sia in esecuzione.
-* Aggiungi il percorso della cartella `bin` di MongoDB alle **variabili d’ambiente** di sistema (PATH), ad esempio:
+*   Premi `Win + R`, digita `services.msc` e verifica che il servizio **MongoDB Server** sia in esecuzione.
+*   Aggiungi il percorso della cartella `bin` di MongoDB alle **variabili d’ambiente** di sistema (PATH), ad esempio:
 
-  ```
-  C:\Program Files\MongoDB\Server\8.0\bin
-  ```
+    ```
+    C:\Program Files\MongoDB\Server\8.0\bin
+    ```
 
 ---
 
@@ -59,6 +56,211 @@ Fai lo stesso anche per la shell (`mongosh`). Ad esempio:
 ```
 C:\Program Files\MongoDB\mongosh\bin
 ```
+
+---
+
+## 🔐 Abilitare l'Autenticazione (Security)
+
+Per un ambiente di produzione, è fondamentale abilitare l'autenticazione.
+
+### 1. Creare un Utente Amministratore
+
+Connettiti alla tua istanza MongoDB (prima di abilitare la sicurezza) e crea un utente root. Questo utente avrà i permessi per gestire l'intera istanza.
+
+```javascript
+// Switch to the admin database
+use admin
+
+// Create a user with root privileges
+db.createUser({
+  user: "adminUser",
+  pwd: "<your-secure-admin-password>",
+  roles: [ { role: "root", db: "admin" } ]
+})
+```
+
+### 2. Creare un Utente Applicativo (Best Practice)
+
+Per motivi di sicurezza, è una buona pratica **non usare** l'utente `root` per le operazioni dell'applicazione. Creiamo invece un utente dedicato con i soli permessi necessari (`readWrite`) per il database specifico dell'applicazione.
+
+```javascript
+// Switch to your application's database
+use myAppDB
+
+// Create a user with read/write permissions only for this database
+db.createUser({
+  user: "appUser",
+  pwd: "<your-secure-app-password>",                  
+  roles: [ { role: "readWrite", db: "myAppDB" } ]
+})
+```
+
+### 3. Abilitare l'Autorizzazione nel File di Configurazione
+
+Apri il file `mongod.cfg` (solitamente in `C:\Program Files\MongoDB\Server\8.0\bin`) con un editor di testo come amministratore e aggiungi o decommenta la sezione `security`.
+
+```yaml
+# ... other configurations ...
+
+security:
+
+# network interfaces
+net:
+  port: 27017
+  bindIp: 127.0.0.1 # Aggiungi altri IP se necessario, es: 127.0.0.1,192.168.1.100
+```
+
+Dopo aver salvato, **riavvia il servizio MongoDB** da `services.msc`.
+
+---
+
+## 🔌 Connessione e Interrogazione
+
+### 1. Connettersi al Database tramite mongosh
+
+Una volta che l'autenticazione è abilitata, dovrai fornire le credenziali per connetterti. Per le operazioni amministrative, usa `adminUser`. Per i test applicativi, usa `appUser`.
+
+```sh
+# Esempio di connessione con l'utente applicativo
+mongosh --host localhost --port 27017 --username appUser --password <your-app-password> --authenticationDatabase myAppDB
+```
+
+## ☕ Esempi di Integrazione con Java (Spring Data MongoDB)
+
+### 1. Configurazione della Connessione (`MongoConfig.java`)
+
+Questa configurazione si connette utilizzando l'utente applicativo `appUser`.
+
+```java
+package it.icg.axapro.mongo.config;
+
+import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ServerApi;
+import com.mongodb.ServerApiVersion;
+import com.mongodb.WriteConcern;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+
+@Configuration
+@EnableMongoRepositories(basePackages = "it.icg.axapro.mongo.repository")
+public class MongoConfig {
+
+	@Value("${mongo.host}")
+	private String host;
+
+	@Value("${mongo.port}")
+	private int port;
+
+	@Value("${mongo.username}") // e.g., "appUser"
+	private String username;
+
+	@Value("${mongo.password}") // e.g., "<your-secure-app-password>"
+	private String password;
+
+	@Value("${mongo.database}") // e.g., "myAppDB"
+	private String database;
+
+	@Bean
+	public MongoClient mongoClient() {
+        // The connection string should use the application database for auth and as the target DB.
+		String connection = String.format(
+            "mongodb://%s:%s@%s:%d/%s?authSource=%s&retryWrites=true&w=majority&directConnection=true",
+            username, password, host, port, database, database
+        );
+		ConnectionString connectionString = new ConnectionString(connection);
+
+		MongoClientSettings settings = MongoClientSettings.builder()
+	        	.applyConnectionString(connectionString)
+				.applyToConnectionPoolSettings(builder -> builder
+						.maxSize(50) 
+						.minSize(10) 
+						.maxWaitTime(5000, TimeUnit.MILLISECONDS) 
+						.maxConnectionIdleTime(60, TimeUnit.SECONDS) 
+						.maxConnectionLifeTime(120, TimeUnit.SECONDS)
+						)
+				.writeConcern(WriteConcern.MAJORITY.withWTimeout(5, TimeUnit.SECONDS))
+				.retryWrites(true)
+				.applyToSocketSettings(builder -> builder
+						.connectTimeout(5000, TimeUnit.MILLISECONDS) 
+						.readTimeout(5000, TimeUnit.MILLISECONDS)    
+						)
+				.serverApi(
+						ServerApi.builder()
+						.version(ServerApiVersion.V1)
+						.build()
+						)
+				.applyToSslSettings(builder -> builder.enabled(false))
+				.build();
+
+		return MongoClients.create(settings);
+	}
+
+	@Bean
+	MongoOperations mongoTemplate(MongoClient mongoClient) {
+		// The MongoTemplate will operate on the specified application database
+		return new MongoTemplate(mongoClient, database);
+	}
+}
+```
+
+### 2. Modello del Documento (`TrattativeXmlMongo.java`)
+
+```java
+package it.icg.axapro.mongo.model;
+
+import javax.persistence.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import it.icg.axapro.data.TrattativeStoricoId;
+import it.icg.axapro.usertype.TrattativaXML;
+
+@Document(collection = "trattativaXmltestAggregation")
+public class TrattativeXmlMongo {
+
+	@Id
+	private TrattativeStoricoId id;
+	
+	private TrattativaXML trattativaXml;
+	
+	// Constructors, Getters, and Setters...
+}
+```
+
+### 3. Repository per l'Accesso ai Dati (`TrattativeXmlMongoRepository.java`)
+
+```java
+package it.icg.axapro.mongo.repository;
+
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import it.icg.axapro.data.TrattativeStoricoId;
+import it.icg.axapro.mongo.model.TrattativeXmlMongo;
+
+public interface TrattativeXmlMongoRepository extends MongoRepository<TrattativeXmlMongo, TrattativeStoricoId> {
+	
+	@Override
+	Optional<TrattativeXmlMongo> findById(TrattativeStoricoId trattativeStoricoId);
+
+	@Override
+	boolean existsById(TrattativeStoricoId trattativeStoricoId);
+
+	List<TrattativeXmlMongo> findAllById(Iterable<TrattativeStoricoId> trattativeStoricoIds);
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	TrattativeXmlMongo save(TrattativeXmlMongo trattativeXmlMongo);
+}
+```
+
+
 
 ## Table of Contents
 
@@ -1944,6 +2146,169 @@ Your examples for `$match`, `$group`, `$sort`, and `$project` demonstrate the us
     }
     ```
 
+
+### Mongo DB Aggregazione
+
+Una volta connesso, sei già nel contesto del tuo database. Di seguito è riportata la pipeline di aggregazione resiliente che abbiamo sviluppato.
+
+```javascript
+// La collection di esempio è "trattativaXmltestAggregation" nel database "myAppDB"
+db.getCollection("trattativaXmltestAggregation").aggregate([
+  // STAGE 1: Initial document filtering
+  {
+    $match: {
+      "_id.codTrattativa": 1866,
+      "_id.prgTrattativa": 1
+    }
+  },
+
+  // STAGE 2: Unwind all nested arrays safely
+  {
+    $unwind: {
+      path: "$trattativaXml.sezioni",
+      includeArrayIndex: "sezioneIndex",
+      preserveNullAndEmptyArrays: true
+    }
+  },
+  {
+    $unwind: {
+      path: "$trattativaXml.sezioni.rischi",
+      includeArrayIndex: "rischioGroupIndex",
+      preserveNullAndEmptyArrays: true
+    }
+  },
+  {
+    $unwind: {
+      path: "$trattativaXml.sezioni.rischi.rischi",
+      includeArrayIndex: "rischioIndex",
+      preserveNullAndEmptyArrays: true
+    }
+  },
+
+  // STAGE 3: Filter for the correct risk type
+  {
+    $match: {
+      "trattativaXml.sezioni.rischi.rischi.codice": { $regex: "UBICAZIONE" }
+    }
+  },
+
+  // STAGE 4: Create intermediate pivoted objects safely
+  {
+    $addFields: {
+      riskParamsPivoted: {
+        $arrayToObject: {
+          $map: {
+            input: { $ifNull: [ "$trattativaXml.sezioni.rischi.rischi.parametri.39.par", [] ] },
+            as: "p",
+            in: {
+              k: "$$p.key",
+              v: { $ifNull: [ "$$p.value.string", { $ifNull: [ "$$p.value.amount", "$$p.value" ] } ] }
+            }
+          }
+        }
+      },
+      garanziePivoted: {
+        $arrayToObject: {
+          $map: {
+            input: { $ifNull: [ "$trattativaXml.sezioni.rischi.rischi.garanzie", [] ] },
+            as: "g",
+            in: {
+              k: "$$g.codice",
+              v: {
+                assic: { $ifNull: [ "$$g.sommaAssicurare.importo", 0.0 ] },
+                tasso: { $ifNull: [ "$$g.tasso.importo", 0.0 ] },
+                premio: { $ifNull: [ "$$g.premio.importo", 0.0 ] },
+                nascondi: { $ifNull: [ "$$g.nascondi", false ] },
+                descrizione: { $ifNull: [ "$$g.descrizione", "" ] },
+                params: {
+                  $let: {
+                    vars: {
+                      parGroup: {
+                        $first: {
+                          $filter: {
+                            input: { $ifNull: [ "$$g.parametri-garanzia.gruppo-parametri.parametri", [] ] },
+                            cond: { $eq: [ "$$this.tipo", "PAR" ] }
+                          }
+                        }
+                      }
+                    },
+                    in: {
+                      $arrayToObject: {
+                        $map: {
+                          input: { $ifNull: [ "$$parGroup.parametro", [] ] },
+                          as: "param",
+                          in: {
+                            k: "$$param.key",
+                            v: { $ifNull: [ "$$param.value.amount", 0.0 ] }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  // STAGE 5: Create a compatible temporary sort key
+  {
+    $addFields: {
+      sortKey: {
+        $cond: {
+          if: {
+            $eq: [ "$trattativaXml.sezioni.rischi.rischi.codice", "UBICAZIONE" ]
+          },
+          then: NumberDecimal("0.0"),
+          else: {
+            $toDecimal: {
+              $replaceAll: {
+                input: "$trattativaXml.sezioni.rischi.rischi.codice",
+                find: "UBICAZIONE_",
+                replacement: ""
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  // STAGE 6 & 7: Sort the documents and remove the key
+  { $sort: { sortKey: 1 } },
+  { $unset: "sortKey" },
+
+  // STAGE 8: Final projection with safe access for all fields
+  {
+    $project: {
+      // The projection is very long. This is a truncated example.
+      // The full projection from our previous conversation would go here.
+      _id: 0,
+      customId: {
+        $concat: [
+          { $toString: "$_id.codTrattativa" }, "-",
+          { $toString: "$_id.prgTrattativa" }, "-",
+          { $toString: { $ifNull: ["$sezioneIndex", "N/A"] } }, "-",
+          { $toString: { $ifNull: ["$rischioGroupIndex", "N/A"] } }, "-",
+          { $toString: { $ifNull: ["$rischioIndex", "N/A"] } }
+        ]
+      },
+      UBI_DESCR: { $ifNull: ["$trattativaXml.sezioni.rischi.rischi.descrizione", null] },
+      UBI_PROV: { $ifNull: ["$riskParamsPivoted.3PROVI", null] },
+      UBI_COMUN: { $ifNull: ["$riskParamsPivoted.3COMUN", null] },
+      FAB_ASSIC: { $ifNull: ["$garanziePivoted.FAB.assic", 0.0] },
+      FAB_TASSO: { $ifNull: ["$garanziePivoted.FAB.tasso", 0.0] },
+      FAB_IMPORTO: { $ifNull: ["$garanziePivoted.FAB.premio", 0.0] },
+      // ... continue for all other fields using the $ifNull pattern ...
+      FINE: "FINE"
+    }
+  }
+])
+```
+
 ## Chapter 10: MongoDB Atlas Search - Full-Text Search Made Easy
 
 **MongoDB Atlas Search** allows you to build powerful, relevant full-text search capabilities directly into your applications without needing a separate search engine. It works by creating special search indexes on your Atlas cluster. You then query these indexes using the `$search` (or `$searchMeta`) aggregation stage.
@@ -2377,3 +2742,9 @@ For managing multi-container applications (like your app + MongoDB), **Docker Co
 This guide has journeyed through the foundational aspects of MongoDB, from its core concepts and data modeling principles to practical operations like CRUD, indexing, aggregation, and running MongoDB in various environments. We've emphasized how these concepts translate into Java application development.
 
 MongoDB's power lies in its flexibility, scalability, and developer-friendly document model. However, like any powerful tool, mastering it requires understanding its nuances, particularly in data modeling and indexing, to build high-performing and robust applications.
+
+
+===================================
+
+Relational to Document model
+Idenetify workload and query pattern and then model the mongo model rispect to it
