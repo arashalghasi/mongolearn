@@ -552,6 +552,55 @@ How you structure your data in MongoDB—a process known as **data modeling**—
 
 MongoDB primarily offers two ways to represent relationships between data: **embedding** and **referencing**.
 
+**we model the mongo db documents respect to the use and our workload instead of the relational approach that we model the schemas respect to the datas.**
+
+![Reference vs Embedding](./photo/referenceVsEmbedding.png "Reference vs Embedding")
+
+By default, it is better to follow the embedding approach.
+However, in some cases, it is necessary to use the reference data modeling approach — for example, when the "many" side of the relationship is very large.
+
+One way to optimize the reference data model is to use the extended reference model.
+
+![Extended Reference Pattern](./photo/extendedReferencePattern.png "Extended Reference Pattern")
+
+
+### Mongo DB High-level system
+
+**Software system**
+
+![Software System](./photo/SoftwareSystem.png "Software System")
+
+**MongoDB Atlas**
+
+![MongoDB Atlas](./photo/MongoDBAtlas.png "MongoDB Atlas")
+
+
+**MongoDb Server**
+
+![MongoDb Server](./photo/MongoDbServer.png "MongoDb Server")
+
+some signs of the throuble
+
+reads vs writes
+
+
+the indexes size on disk for denormalized (devide to more collections) is significantly more smaller rispect to the normalized data model.
+
+**findAndModify vs updateOne:**
+
+findAndModify does update one and it return the updated docuemnt
+but the updateOne return the message of the result of the operation like sucesss
+
+When NoSql
+1- Optimize for compute
+2- Denormalized/heirarchical
+3- Instantiated view
+4- Scale Horizontally
+5- build for OLTP at scale
+
+
+
+
 ### 1. Embedding (Denormalization) - Keeping Related Data Close
 
 **Embedding** means storing related data directly within a single "parent" document. This could be as a sub-document (a nested object) or as an array of sub-documents. This approach is also known as **denormalization**.
