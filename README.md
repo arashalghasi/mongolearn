@@ -63,6 +63,46 @@ C:\Program Files\MongoDB\mongosh\bin
 
 Per un ambiente di produzione, è fondamentale abilitare l'autenticazione.
 
+If you are using a self-installed MongoDB deployment, run the commands below to create the necessary roles and users to help with implementing programmatic access control:
+
+```javascript
+var dbName = "book-role-programmatic-restricted-view";
+db = db.getSiblingDB(dbName);
+db.dropDatabase();
+db.dropAllRoles();
+db.dropAllUsers();
+
+// Create 3 roles to use for programmatic access control
+db.createRole({"role": "Receptionist", "roles": [], "privileges": []});
+db.createRole({"role": "Nurse", "roles": [], "privileges": []});
+db.createRole({"role": "Doctor", "roles": [], "privileges": []});
+
+// Create 3 users where each user will have a different role
+db.createUser({
+  "user": "front-desk",
+  "pwd": "abc123",
+  "roles": [
+    {"role": "Receptionist", "db": dbName},
+  ]
+});
+db.createUser({
+  "user": "nurse-station",
+  "pwd": "xyz789",
+  "roles": [
+    {"role": "Nurse", "db": dbName},
+  ]
+});
+db.createUser({
+  "user": "exam-room",
+  "pwd": "mno456",
+  "roles": [
+    {"role": "Doctor", "db": dbName},
+  ]
+});
+
+
+```
+
 ### 1. Creare un Utente Amministratore
 
 Connettiti alla tua istanza MongoDB (prima di abilitare la sicurezza) e crea un utente root. Questo utente avrà i permessi per gestire l'intera istanza.
@@ -90,7 +130,7 @@ use myAppDB
 // Create a user with read/write permissions only for this database
 db.createUser({
   user: "appUser",
-  pwd: "<your-secure-app-password>",                  
+  pwd: "<your-secure-app-password>",
   roles: [ { role: "readWrite", db: "myAppDB" } ]
 })
 ```
@@ -1839,6 +1879,27 @@ You might need to delete indexes if they are unused, redundant, or if you're res
 
 The **MongoDB Aggregation Framework** is a powerful tool for processing data and returning computed results. It models data processing as a **pipeline** of **stages**. Documents pass through these stages sequentially, and each stage transforms the documents in some way.
 
+What Do People Use The Aggregation Framework For?
+The Aggregation Framework is versatile and used for many different data processing and manipulation tasks. Some typical example uses are for:
+
+- Real-time analytics
+- Report generation with roll-ups, sums & averages
+- Real-time dashboards
+- Redacting data to present via views
+- Joining data together from different collections on the "server-side"
+- Data science, including data discovery and data wrangling
+- Mass data analysis at scale (a la "big data")
+- Real-time queries where deeper "server-side" data post-processing is required than provided by the MongoDB Query Language (MQL)
+- Copying and transforming subsets of data from one collection to another
+Navigating relationships between records, looking for patterns
+- Data masking to obfuscate sensitive data
+- Performing the Transform (T) part of an Extract-Load-Transform (ELT) workload
+- Data quality reporting and cleansing
+- Updating a materialised view with the results of the most recent source data changes
+- Performing full-text search (using MongoDB's Atlas Search)
+- Representing data ready to be exposed via SQL/ODBC/JDBC (using MongoDB's BI Connector)
+- Supporting machine learning frameworks for efficient data analysis (e.g. via MongoDB's Spark Connector)
+
 ### Core Concepts: Pipeline and Stages
 
 *   **Aggregation**: The process of collecting, processing, and summarizing data. Think of operations like grouping, averaging, summing, filtering, and reshaping data.
@@ -2149,7 +2210,7 @@ Your examples for `$match`, `$group`, `$sort`, and `$project` demonstrate the us
 
 ### Mongo DB Aggregazione
 
-Una volta connesso, sei già nel contesto del tuo database. Di seguito è riportata la pipeline di aggregazione resiliente che abbiamo sviluppato.
+an example of mongo db aggregation containing various stages.
 
 ```javascript
 // La collection di esempio è "trattativaXmltestAggregation" nel database "myAppDB"
@@ -2308,6 +2369,37 @@ db.getCollection("trattativaXmltestAggregation").aggregate([
   }
 ])
 ```
+
+
+### Best practice aggregation
+
+placing a match stage at the beginning limits the total number of documents in the pipeline and reduces the processing time.
+
+Query can also take advantage of indexes if you put the match at the very beginning of a pipeline. The sort stage usually performs better at the end because keeping it otherwise often means additional calculations or aggregations that might be performed can affect the sort order, hence rendering the output of the sort stage irrelevant.
+
+Pipeline stages have a limit of 100 megabytes of RAM. To allow for the handling of large datasets, use the allowDiskUse option to enable aggregation pipeline stages to write data to temporary files.
+
+
+If you have multiple stages in your pipeline, it’s always better to understand the overhead associated with each stage. For instance, if you have both $sort and $match stage in your pipeline, it’s highly recommended that you use a $match before $sort in order to minimize the documents that need to be sorted.
+
+
+to join two collections
+
+```javascript
+
+   // Link the collections
+   { $lookup: {
+      from: "products",
+      localField: "product_id",
+      foreignField: "p_id",
+      as: "product_mapping"
+   } },
+
+```
+
+<b>$merge<b> </br>
+
+Writes the results of the aggregation pipeline to a specified collection. The $merge operator must be the last stage in the pipeline.
 
 ## Chapter 10: MongoDB Atlas Search - Full-Text Search Made Easy
 
