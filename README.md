@@ -371,7 +371,8 @@ public interface NegotiationXmlMongoRepository extends MongoRepository<Negotiati
 13. [Chapter 12: Running MongoDB with Docker](#chapter-12-running-mongodb-with-docker)
     *   [Docker Run Commands](#docker-run-commands)
     *   [Docker Compose](#docker-compose)
-14. [Conclusion](#conclusion)
+14. [Chapter 13: Pentaho report designer](#chapter-13-Pentaho-report-designer)
+15. [Conclusion](#conclusion)
 
 ---
 
@@ -2891,14 +2892,106 @@ For managing multi-container applications (like your app + MongoDB), **Docker Co
     *   **To run:** Navigate to the directory containing `docker-compose.yaml` and run `docker-compose up -d`.
     *   Your application service (`my_application_service`) can connect to MongoDB using the service name `mongodb_service` as the hostname in its connection string.
 
+
+
+## Chapter 13: Pentaho report designer
+
+### Step 1: Create a New MongoDB Data Source
+
+1.  In the **Data** pane on the top-right of Pentaho Report Designer, right-click on **Data Sets**.
+2.  Select **MongoDB** from the list to open the `MongoDB Data Source` dialog.
+
+![creating a new datasource](./photo/PentahoMongoConfiguration.png "newDataSouce")
+
+### Step 2: Configure Connection Details
+
+Navigate to the **Configure connection** tab. This tab is for authentication and establishing the initial connection to the MongoDB server.
+
+Fill in the fields exactly as shown in the screenshot:
+
+*   **Name**: `RISCHI_MONGO` (This is the name for this specific data source within your report).
+*   **Host name(s) or**: `localhost`
+*   **Port**: `27017`
+*   **Auth Database**: `admin` (Important: This is the database where the user's credentials are stored).
+*   **User**: `arash`
+*   **Password**: `arash3132` (Note: Use your actual secure password).
+
+Leave the other fields (Connection, Socket timeout, etc.) as default unless you have specific requirements.
+
+![Configure Connection](./photo/PentahoMongoConfiguration1.png "ConfigureConnection")
+
+### Step 3: Specify Input Options
+
+Click on the **Input Options** tab. Here, you will specify which database and collection the query will actually run against.
+
+*   **Database**: `myAppDB` (This is the database containing your data, which may be different from the 'Auth Database').
+*   **Collection**: `trattativaTestAggregation`
+*   **Read preference**: `primary`
+
+![Input Options](./photo/PentahoMongoConfiguration2.png "InputOptions")
+
+### Step 4: Enter the Aggregation Query
+
+This is the most critical step for running your aggregation.
+
+1.  Navigate to the **Query** tab.
+2.  **Paste your entire MongoDB aggregation pipeline** into the `Query expression (JSON)` text area. The query must be a valid JSON array, starting with `[` and ending with `]`.
+3.  **Crucially, you must check the box** labeled **Query is aggregation pipeline**. If this is not checked, Pentaho will try to run the query as a simple `find()` command, which will fail.
+
+```json
+[
+  {
+    "$match": {
+      "_id.codTrattativa": 1866,
+      "_id.prgTrattativa": 1
+    }
+  },
+  {
+    "$unwind": {
+      "path": "$trattativaXml.sezioni",
+      "includeArrayIndex": "sezioneIndex",
+      "preserveNullAndEmptyArrays": true
+    }
+  },
+  
+  // ... Paste your full aggregation query here ...
+  
+  {
+    "$project": {
+      "_id": 0,
+      "UBI_DESCR": { "$ifNull": ["$trattativaXml.sezioni.rischi.rischi.descrizione", null] },
+       "FINE": "FINE"
+    }
+  },
+  {
+    "$unset": "sortKey"
+  }
+]
+```
+
+![Aggregation Query](./photo/PentahoMongoConfiguration3.png "AggregationQuery")
+
+### Step 5: Define the Output Fields
+
+Once the query is correctly configured, you need to tell Pentaho what data fields to expect in the result.
+
+1.  Go to the **Fields** tab.
+2.  Click the **Get fields** button. Pentaho will execute the query against your MongoDB instance to automatically discover the output fields defined in your final `$project` stage.
+3.  The grid will populate with the field names, paths, and inferred data types, as seen in the screenshot.
+4.  You can manually adjust the data types (e.g., from `String` to `Number`) if Pentaho infers them incorrectly.
+
+![Output Fields](./photo/PentahoMongoConfiguration4.png "OutputFields")
+
+### Step 6: Preview and Finalize
+
+1.  Click the **Preview** button at the bottom of the dialog to test the data source. This will run the query and show you the first few rows of data. This step is essential to confirm that your connection, query, and field definitions are all correct.
+2.  If the preview is successful and shows the correct data, click **OK** to save the data source.
+
+Your `RISCHI_MONGO` data source is now configured and ready to be used in your Pentaho report.
+
+
 ## Conclusion
 
 This guide has journeyed through the foundational aspects of MongoDB, from its core concepts and data modeling principles to practical operations like CRUD, indexing, aggregation, and running MongoDB in various environments. We've emphasized how these concepts translate into Java application development.
 
 MongoDB's power lies in its flexibility, scalability, and developer-friendly document model. However, like any powerful tool, mastering it requires understanding its nuances, particularly in data modeling and indexing, to build high-performing and robust applications.
-
-
-===================================
-
-Relational to Document model
-Idenetify workload and query pattern and then model the mongo model rispect to it
